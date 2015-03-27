@@ -14,6 +14,7 @@ class StatusJsonResponse(HttpResponse):
     In other cases `data` will be dumped as is.
     `object` was used as default value of `data` to allow dumping of `None`.
     '''
+
     def __init__(self, success=True, data=object, encoder=DjangoJSONEncoder,
                  safe=True, **kwargs):
         if data is object:
@@ -22,10 +23,11 @@ class StatusJsonResponse(HttpResponse):
             raise TypeError('In order to allow non-dict objects to be '
                             'serialized set the safe parameter to False')
         kwargs.setdefault('content_type', 'application/json')
-        if success is True:
-            data = {'status': 'success', 'data': data}
-        elif success is False:
-            data = {'status': 'fail', 'data': data}
+        if isinstance(success, bool):
+            data = {
+                'status': 'success' if success else 'fail',
+                'data': data
+            }
         data = json.dumps(data, cls=encoder)
         super(StatusJsonResponse, self).__init__(content=data, **kwargs)
 
