@@ -6,14 +6,14 @@ from django.http.response import HttpResponse
 
 
 class StatusJsonResponse(HttpResponse):
-    '''
+    """
     This is extended (but not inherited) version of `JsonResponse` from
     `django.http.response`. Please read its description too.
     If `success` is a boolean, `data` will be dumped with status message
     'success' or 'fail'. Example: `{'status': 'success', 'data': data}`.
     In other cases `data` will be dumped as is.
     `object` was used as default value of `data` to allow dumping of `None`.
-    '''
+    """
 
     def __init__(self, success=True, data=object, encoder=DjangoJSONEncoder,
                  safe=True, **kwargs):

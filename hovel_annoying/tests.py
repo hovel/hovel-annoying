@@ -5,6 +5,7 @@ from django import forms
 from django.test import TestCase
 from django.test.utils import override_settings
 from hovel_annoying.json_utils import StatusJsonResponse, form_errors_to_dict
+from hovel_annoying.model_utils import FilePathGenerator
 
 
 class TestJsonUtils(TestCase):
@@ -73,3 +74,16 @@ class TestJsonUtils(TestCase):
         }
 
         self.assertEqual(errors, errors_sample)
+
+
+class TestModelUtils(TestCase):
+    def test_file_path_generator(self):
+        file_name = 'test test'
+        file_ext = '.abc'
+        dirname = 'parent/child'
+        fpg = FilePathGenerator(dirname)
+        result = fpg(None, file_name + file_ext)
+        self.assertNotIn(file_name, result)
+        self.assertTrue(result.startswith(dirname))
+        self.assertTrue(result.endswith(file_ext))
+        self.assertTrue(len(result) > len(dirname + file_ext) + 36)  # uuid len
