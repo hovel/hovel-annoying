@@ -17,13 +17,13 @@ class FilePathGenerator(object):
     - you're afraid that weird unicode names can confuse browsers or filesystem
     """
 
-    def __init__(self, dir):
-        self.dir = dir
+    def __init__(self, to):
+        self.to = to
 
     def __call__(self, instance, filename):
         extension = os.path.splitext(filename)[1]
         uuid_filename = force_text(uuid.uuid4()) + extension
-        upload_path = os.path.join(self.dir, uuid_filename[:2])
+        upload_path = os.path.join(self.to, uuid_filename[:2])
         if settings.MEDIA_ROOT:
             upload_path_media = os.path.join(settings.MEDIA_ROOT, upload_path)
             if not os.path.exists(upload_path_media):
