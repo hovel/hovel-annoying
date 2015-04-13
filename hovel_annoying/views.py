@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from hovel_annoying.json_utils import StatusJsonResponse
 
 
-class PartialUpdateMixin(generic.View):
+class BasePartialUpdateView(generic.View):
     http_method_names = ['post']
     model = None
     fields = []
