@@ -62,7 +62,7 @@ function initSimpleModalForm($modal, $form, onSuccess, $errors) {
     $form.on('submit', function (e) {
         e.preventDefault();
         $errors.empty();
-        SimpleAJAXRequest($form.attr('action'), $form.serializeArray(), onSuccess, $errors);
+        SimpleAJAXRequest($form.attr('action'), $form.serialize(), onSuccess, $errors);
     });
 }
 

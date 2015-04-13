@@ -41,15 +41,3 @@ def form_errors_to_dict(form, escape_html=False):
             'errors': field_error_list.get_json_data(escape_html)
         }
     return errors
-
-
-def deserialize_jquery_form_data(string):
-    """
-    Transforms data which have been serialized using jQuery's .serializeArray()
-    to dict.
-    >>> print(request.body)
-    [{"name":"a","value":"1"},{"name":"b","value":"2"}]
-    >>> deserialize_jquery_form_data(request)
-    {"a": 1, "b": 2}
-    """
-    return {i['name']: i['value'] for i in json.loads(string)}
