@@ -74,16 +74,29 @@ function initSimpleModalForm($modal, $form, onSuccess, $errors) {
  * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
 function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
+    var origFieldName = 'original-' + field;
     $(selector).each(function () {
         var $each = $(this);
         $each.on('focus', function () {
             var $focused = $(this);
-            $focused.data('original-' + field, $.trim($focused.text()));
+            $focused.data(origFieldName, $.trim($focused.text()));
+            // trigger the blur event by pressing enter or escape
+            $focused.on('keydown', function (e) {
+                var $edited = $(this);
+                if (e.which != 13 && e.which != 27) {
+                    return;
+                }
+                if (e.which == 27) {
+                    $edited.text($edited.data(origFieldName));
+                }
+                $edited.trigger('blur');
+            });
         });
         $each.on('blur', function () {
             var $blurred = $(this),
                 value = $.trim($blurred.text());
-            if (value == $blurred.data('original-' + field)) {
+            $blurred.off('keydown');
+            if (value == $blurred.data(origFieldName)) {
                 return;
             }
             SimpleAJAXRequest(
