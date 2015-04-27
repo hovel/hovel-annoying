@@ -67,48 +67,95 @@ function initSimpleModalForm($modal, $form, onSuccess, $errors) {
 }
 
 
+function initPlainContentEditableOnFocus($focused, field) {
+    $focused.data('original-' + field, $.trim($focused.text()));
+    $focused.on('keydown', function (e) {
+        var $edited = $(this);
+        if (e.which == 13 || e.which == 27) {
+            if (e.which == 27) {
+                $edited.text($edited.data('original-' + field));
+            }
+            $edited.trigger('blur');
+        }
+    });
+}
+
+
+function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) {
+    $blurred.off('keydown');
+    var newValue = $.trim($blurred.text()),
+        originalValue = $blurred.data('original-' + field);
+    if (newValue != originalValue) {
+        $.ajax({
+            url: urlBuilder($blurred),
+            data: {'field': field, 'value': newValue},
+            dataType: 'json',
+            method: 'POST',
+            success: function (response, textStatus, jqXHR) {
+                if (response.status == 'success') {
+                    $blurred.text(response.data[field]);
+                    if (typeof onSuccess == 'function') {
+                        onSuccess(response.data, $blurred);
+                    }
+                } else if (response.status == 'fail') {
+                    $blurred.text(originalValue);
+                    alert('Что-то пошло не так. Попробуйте обновить страницу.');
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $blurred.text(originalValue);
+                alert('Что-то пошло не так. Попробуйте обновить страницу.');
+            }
+        });
+    }
+}
+
+
 /**
+ * Usage: just add <code>contenteditable="true"</code> attribute to the element you want to be edited and initialize this function.
  * @param {String} selector - CSS selector
  * @param {String} field - name of the field to update
  * @param {Function} urlBuilder - function that takes the edited jQuery element and returns url to request
  * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
 function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
-    var origFieldName = 'original-' + field;
     $(selector).each(function () {
         var $each = $(this);
         $each.on('focus', function () {
-            var $focused = $(this);
-            $focused.data(origFieldName, $.trim($focused.text()));
-            // trigger the blur event by pressing enter or escape
-            $focused.on('keydown', function (e) {
-                var $edited = $(this);
-                if (e.which != 13 && e.which != 27) {
-                    return;
-                }
-                if (e.which == 27) {
-                    $edited.text($edited.data(origFieldName));
-                }
-                $edited.trigger('blur');
-            });
+            initPlainContentEditableOnFocus($(this), field);
         });
         $each.on('blur', function () {
-            var $blurred = $(this),
-                value = $.trim($blurred.text());
-            $blurred.off('keydown');
-            if (value == $blurred.data(origFieldName)) {
-                return;
-            }
-            SimpleAJAXRequest(
-                urlBuilder($blurred),
-                {'field': field, 'value': value},
-                function (data) {
-                    $blurred.text(data[field]);
-                    if (typeof onSuccess == 'function') {
-                        onSuccess(data, $blurred);
-                    }
-                }
-            );
+            initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess)
         });
+    });
+}
+
+
+/**
+ * Usage: add <code>data-contenteditable="%id%"</code> attribute to the element you want to be edited,
+ *        add <code>data-contenteditable-target="%id%"</code> attribute to the element you want to be clicked
+ *        and initialize this function. <code>%id%</code> means unique string or number, not a real element id.
+ * @param {String} activatorSelector - CSS selector
+ * @param {String} field - name of the field to update
+ * @param {Function} urlBuilder - function that takes the edited jQuery element and returns url to request
+ * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
+ */
+function initPlainContentEditableWithActivator(activatorSelector, field, urlBuilder, onSuccess) {
+    $(activatorSelector).on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $activator = $(this),
+            targetDataId = $activator.data('contenteditable-target'),
+            $target = $('[data-contenteditable=' + targetDataId + ']');
+        $target.on('focus', function () {
+            initPlainContentEditableOnFocus($(this), field);
+        });
+        $target.on('blur', function () {
+            initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess);
+            $target.off('focus blur');
+            $target.removeAttr('contenteditable');
+        });
+        $target.attr({'contenteditable': 'true'});
+        $target.trigger('focus');
     });
 }
