@@ -141,21 +141,24 @@ function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
  * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
 function initPlainContentEditableWithActivator(activatorSelector, field, urlBuilder, onSuccess) {
-    $(activatorSelector).on('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var $activator = $(this),
-            targetDataId = $activator.data('contenteditable-target'),
-            $target = $('[data-contenteditable=' + targetDataId + ']');
-        $target.on('focus', function () {
-            initPlainContentEditableOnFocus($(this), field);
+    $(activatorSelector).each(function () {
+        var $each = $(this);
+        $each.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $activator = $(this),
+                targetDataId = $activator.data('contenteditable-target'),
+                $target = $('[data-contenteditable=' + targetDataId + ']');
+            $target.on('focus', function () {
+                initPlainContentEditableOnFocus($(this), field);
+            });
+            $target.on('blur', function () {
+                initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess);
+                $target.off('focus blur');
+                $target.removeAttr('contenteditable');
+            });
+            $target.attr({'contenteditable': 'true'});
+            $target.trigger('focus');
         });
-        $target.on('blur', function () {
-            initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess);
-            $target.off('focus blur');
-            $target.removeAttr('contenteditable');
-        });
-        $target.attr({'contenteditable': 'true'});
-        $target.trigger('focus');
     });
 }
