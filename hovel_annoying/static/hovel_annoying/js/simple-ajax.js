@@ -67,6 +67,18 @@ function initSimpleModalForm($modal, $form, onSuccess, $errors) {
 }
 
 
+function toggleContentEditableParentLink($parentLink) {
+    if ($parentLink.length == 1) {
+        if ($parentLink.get(0).hasAttribute('href')) {
+            $parentLink.data('href', $parentLink.attr('href'));
+            $parentLink.removeAttr('href');
+        } else {
+            $parentLink.attr('href', $parentLink.data('href'));
+        }
+    }
+}
+
+
 function initPlainContentEditableOnFocus($focused, field) {
     $focused.data('original-' + field, $.trim($focused.text()));
     $focused.on('keydown', function (e) {
@@ -120,13 +132,17 @@ function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) 
  */
 function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
     $(selector).each(function () {
-        var $each = $(this);
-        $each.on('focus', function () {
-            initPlainContentEditableOnFocus($(this), field);
+        var $target = $(this),
+            $parentLink = $target.closest('a');
+        toggleContentEditableParentLink($parentLink);
+        $target.on('focus', function () {
+            initPlainContentEditableOnFocus($target, field);
         });
-        $each.on('blur', function () {
-            initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess)
+        $target.on('blur', function () {
+            initPlainContentEditableOnBlur($target, field, urlBuilder, onSuccess)
+            toggleContentEditableParentLink($parentLink);
         });
+
     });
 }
 
@@ -142,22 +158,24 @@ function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
  */
 function initPlainContentEditableWithActivator(activatorSelector, field, urlBuilder, onSuccess) {
     $(activatorSelector).each(function () {
-        var $each = $(this);
-        $each.on('click', function (e) {
+        var $activator = $(this);
+        $activator.on('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            var $activator = $(this),
-                targetDataId = $activator.data('contenteditable-target'),
-                $target = $('[data-contenteditable=' + targetDataId + ']');
+            var targetId = $activator.data('contenteditable-target'),
+                $target = $('[data-contenteditable=' + targetId + ']'),
+                $parentLink = $target.closest('a');
+            toggleContentEditableParentLink($parentLink);
+            $target.attr({'contenteditable': 'true'});
             $target.on('focus', function () {
-                initPlainContentEditableOnFocus($(this), field);
+                initPlainContentEditableOnFocus($target, field);
             });
             $target.on('blur', function () {
-                initPlainContentEditableOnBlur($(this), field, urlBuilder, onSuccess);
+                initPlainContentEditableOnBlur($target, field, urlBuilder, onSuccess);
                 $target.off('focus blur');
                 $target.removeAttr('contenteditable');
+                toggleContentEditableParentLink($parentLink);
             });
-            $target.attr({'contenteditable': 'true'});
             $target.trigger('focus');
         });
     });
