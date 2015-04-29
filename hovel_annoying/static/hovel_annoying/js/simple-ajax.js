@@ -11,12 +11,18 @@
 
 
 /**
- * @param {String} url
- * @param {(jQuery|String|Array)} data - data to send
- * @param {SimpleAJAXRequestCallback} [onSuccess] - function to be called after successful request
- * @param {jQuery} [$errors] - container for error messages
+ * @param {Object} options
+ * @param {String} options.url
+ * @param {(jQuery|String|Array)} options.data - data to send
+ * @param {SimpleAJAXRequestCallback} [options.onSuccess] - function to be called after successful request
+ * @param {jQuery} [options.$errors] - container for error messages
  */
-function SimpleAJAXRequest(url, data, onSuccess, $errors) {
+function SimpleAJAXRequest(options) {
+    var url = options.url,
+        data = options.data,
+        onSuccess = options.onSuccess,
+        $errors = options.$errors;
+
     $.ajax({
         url: url,
         data: data,
@@ -49,12 +55,18 @@ function SimpleAJAXRequest(url, data, onSuccess, $errors) {
 
 
 /**
- * @param {jQuery} $modal - modal window
- * @param {jQuery} $form - form inside $modal
- * @param {SimpleAJAXRequestCallback} [onSuccess] - function to be called after successful request
- * @param {jQuery} [$errors] - container for error messages
+ * @param {Object} options
+ * @param {jQuery} options.$modal - modal window
+ * @param {jQuery} options.$form - form inside $modal
+ * @param {SimpleAJAXRequestCallback} [options.onSuccess] - function to be called after successful request
+ * @param {jQuery} [options.$errors] - container for error messages
  */
-function initSimpleModalForm($modal, $form, onSuccess, $errors) {
+function initSimpleModalForm(options) {
+    var $modal = options.$modal,
+        $form = options.$form,
+        onSuccess = options.onSuccess,
+        $errors = options.$errors;
+
     $modal.on('hidden.bs.modal', function () {
         $form.trigger('reset');
         $errors.empty();
@@ -62,7 +74,12 @@ function initSimpleModalForm($modal, $form, onSuccess, $errors) {
     $form.on('submit', function (e) {
         e.preventDefault();
         $errors.empty();
-        SimpleAJAXRequest($form.attr('action'), $form.serialize(), onSuccess, $errors);
+        SimpleAJAXRequest({
+            url: $form.attr('action'),
+            data: $form.serialize(),
+            onSuccess: onSuccess,
+            $errors: $errors
+        });
     });
 }
 
@@ -125,12 +142,18 @@ function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) 
 
 /**
  * Usage: just add <code>contenteditable="true"</code> attribute to the element you want to be edited and initialize this function.
- * @param {String} selector - CSS selector
- * @param {String} field - name of the field to update
- * @param {Function} urlBuilder - function that takes the edited jQuery element and returns url to request
- * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
+ * @param {Object} options
+ * @param {String} options.selector - CSS selector
+ * @param {String} options.field - name of the field to update
+ * @param {Function} options.urlBuilder - function that takes the edited jQuery element and returns url to request
+ * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
-function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
+function initPlainContentEditable(options) {
+    var selector = options.selector,
+        field = options.field,
+        urlBuilder = options.urlBuilder,
+        onSuccess = options.onSuccess;
+
     $(selector).each(function () {
         var $target = $(this),
             $parentLink = $target.closest('a');
@@ -151,12 +174,18 @@ function initPlainContentEditable(selector, field, urlBuilder, onSuccess) {
  * Usage: add <code>data-contenteditable="%id%"</code> attribute to the element you want to be edited,
  *        add <code>data-contenteditable-target="%id%"</code> attribute to the element you want to be clicked
  *        and initialize this function. <code>%id%</code> means unique string or number, not a real element id.
- * @param {String} activatorSelector - CSS selector
- * @param {String} field - name of the field to update
- * @param {Function} urlBuilder - function that takes the edited jQuery element and returns url to request
- * @param {Function} [onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
+ * @param {Object} options
+ * @param {String} options.activatorSelector - CSS selector
+ * @param {String} options.field - name of the field to update
+ * @param {Function} options.urlBuilder - function that takes the edited jQuery element and returns url to request
+ * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
-function initPlainContentEditableWithActivator(activatorSelector, field, urlBuilder, onSuccess) {
+function initPlainContentEditableWithActivator(options) {
+    var activatorSelector = options.activatorSelector,
+        field = options.field,
+        urlBuilder = options.urlBuilder,
+        onSuccess = options.onSuccess;
+
     $(activatorSelector).each(function () {
         var $activator = $(this);
         $activator.on('click', function (e) {
