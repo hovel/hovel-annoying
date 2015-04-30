@@ -113,10 +113,18 @@ function initPlainContentEditableOnFocus($focused, field) {
 function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) {
     $blurred.off('keydown');
     var newValue = $.trim($blurred.text()),
-        originalValue = $blurred.data('original-' + field);
+        originalValue = $blurred.data('original-' + field),
+        url;
+
     if (newValue != originalValue) {
+        if (typeof urlBuilder == 'function') {
+            url = urlBuilder($blurred);
+        } else {
+            url = $blurred.data('contenteditable-url');
+        }
+
         $.ajax({
-            url: urlBuilder($blurred),
+            url: url,
             data: {'field': field, 'value': newValue},
             dataType: 'json',
             method: 'POST',
@@ -145,7 +153,8 @@ function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) 
  * @param {Object} options
  * @param {String} options.selector - CSS selector
  * @param {String} options.field - name of the field to update
- * @param {Function} options.urlBuilder - function that takes the edited jQuery element and returns url to request
+ * @param {Function} [options.urlBuilder] - function that takes the edited jQuery element and returns url to request;
+ *                                          if undefined, value will be taken from data-contenteditable-url attribute of the edited element
  * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
 function initPlainContentEditable(options) {
@@ -177,7 +186,8 @@ function initPlainContentEditable(options) {
  * @param {Object} options
  * @param {String} options.activatorSelector - CSS selector
  * @param {String} options.field - name of the field to update
- * @param {Function} options.urlBuilder - function that takes the edited jQuery element and returns url to request
+ * @param {Function} [options.urlBuilder] - function that takes the edited jQuery element and returns url to request;
+ *                                          if undefined, value will be taken from data-contenteditable-url attribute of the edited element
  * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
  */
 function initPlainContentEditableWithActivator(options) {
