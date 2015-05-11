@@ -26,13 +26,6 @@ class TestJsonUtils(TestCase):
             {'status': 'fail', 'data': {'1': 'test'}}
         )
 
-        without_status = StatusJsonResponse(None, data)
-        self.assertEqual(without_status.status_code, 200)
-        self.assertEqual(
-            json.loads(without_status.content),
-            {'1': 'test'}
-        )
-
         data_only = StatusJsonResponse(data=data)
         self.assertEqual(data_only.status_code, 200)
         self.assertEqual(
@@ -44,7 +37,7 @@ class TestJsonUtils(TestCase):
         self.assertEqual(empty.status_code, 200)
         self.assertEqual(
             json.loads(empty.content),
-            {'status': 'success', 'data': {}}
+            {'status': 'success', 'data': ''}
         )
 
     @override_settings(LANGUAGE_CODE='en')
