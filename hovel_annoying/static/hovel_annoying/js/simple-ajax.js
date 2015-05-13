@@ -30,7 +30,7 @@ function SimpleAJAXRequest(options) {
             } else if (response.status == 'fail') {
                 if (typeof options.onFail == 'function') {
                     options.onFail(response.data);
-                } else if (typeof response.data == 'string') {
+                } else if (typeof response.data == 'string' && response.data) {
                     alert(response.data);
                 } else {
                     alert('Что-то пошло не так. Попробуйте обновить страницу.');
@@ -54,6 +54,10 @@ function SimpleAJAXRequest(options) {
  * @param {String} errorMsgClass
  */
 function displayFormErrors(data, $form, errorMsgClass) {
+    if (!data) {
+        return;
+    }
+
     function displayError($element, message) {
         $element.after('<small class="' + errorMsgClass.replace(/\./g, ' ') + '">' + message + '</small>');
     }
@@ -80,7 +84,7 @@ function displayFormErrors(data, $form, errorMsgClass) {
  * @param {jQuery} options.$form - form inside $modal
  * @param {Function} [options.onSuccess] - see {@link SimpleAJAXRequest}
  * @param {Function} [options.onFail] - see {@link SimpleAJAXRequest} for calling
- *                                      conditions; takes request.data, $form,
+ *                                      conditions; takes response.data, $form
  *                                      and error message class as arguments;
  *                                      default value is {@link displayFormErrors}
  * @param {Function} [options.onError] - see {@link SimpleAJAXRequest}
@@ -108,13 +112,10 @@ function initSimpleForm(options) {
 /**
  * @param {Object} options
  * @param {jQuery} options.$modal - modal window
- * @param {jQuery} options.$form - form inside $modal
- * @param {Function} [options.onSuccess] - see {@link SimpleAJAXRequest}
- * @param {Function} [options.onFail] - see {@link SimpleAJAXRequest} for calling
- *                                      conditions; takes request.data, $form,
- *                                      and error message class as arguments;
- *                                      default value is {@link displayFormErrors}
- * @param {Function} [options.onError] - see {@link SimpleAJAXRequest}
+ * @param {jQuery} options.$form - see {@link initSimpleForm}
+ * @param {Function} [options.onSuccess] - see {@link initSimpleForm}
+ * @param {Function} [options.onFail] - see {@link initSimpleForm}
+ * @param {Function} [options.onError] - see {@link initSimpleForm}
  */
 function initSimpleModalForm(options) {
     var $modal = options.$modal,
@@ -147,143 +148,6 @@ function initSimpleModalForm(options) {
                     $modal.data('bs.modal').handleUpdate();
                 }
             }
-        });
-    });
-}
-
-
-function toggleContentEditableParentLink($parentLink) {
-    if ($parentLink.length == 1) {
-        if ($parentLink.get(0).hasAttribute('href')) {
-            $parentLink.data('href', $parentLink.attr('href'));
-            $parentLink.removeAttr('href');
-        } else {
-            $parentLink.attr('href', $parentLink.data('href'));
-        }
-    }
-}
-
-
-function initPlainContentEditableOnFocus($focused, field) {
-    $focused.data('original-' + field, $.trim($focused.text()));
-    $focused.on('keydown', function (e) {
-        var $edited = $(this);
-        if (e.which == 13 || e.which == 27) {
-            if (e.which == 27) {
-                $edited.text($edited.data('original-' + field));
-            }
-            $edited.trigger('blur');
-        }
-    });
-}
-
-
-function initPlainContentEditableOnBlur($blurred, field, urlBuilder, onSuccess) {
-    $blurred.off('keydown');
-    var newValue = $.trim($blurred.text()),
-        originalValue = $blurred.data('original-' + field),
-        url;
-
-    if (newValue != originalValue) {
-        if (typeof urlBuilder == 'function') {
-            url = urlBuilder($blurred);
-        } else {
-            url = $blurred.data('contenteditable-url');
-        }
-
-        $.ajax({
-            url: url,
-            data: {'field': field, 'value': newValue},
-            dataType: 'json',
-            method: 'POST',
-            success: function (response, textStatus, jqXHR) {
-                if (response.status == 'success') {
-                    $blurred.text(response.data[field]);
-                    if (typeof onSuccess == 'function') {
-                        onSuccess(response.data, $blurred);
-                    }
-                } else if (response.status == 'fail') {
-                    $blurred.text(originalValue);
-                    alert('Что-то пошло не так. Попробуйте обновить страницу.');
-                }
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                $blurred.text(originalValue);
-                alert('Что-то пошло не так. Попробуйте обновить страницу.');
-            }
-        });
-    }
-}
-
-
-/**
- * Usage: just add <code>contenteditable="true"</code> attribute to the element you want to be edited and initialize this function.
- * @param {Object} options
- * @param {String} options.selector - CSS selector
- * @param {String} options.field - name of the field to update
- * @param {Function} [options.urlBuilder] - function that takes the edited jQuery element and returns url to request;
- *                                          if undefined, value will be taken from data-contenteditable-url attribute of the edited element
- * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
- */
-function initPlainContentEditable(options) {
-    var selector = options.selector,
-        field = options.field,
-        urlBuilder = options.urlBuilder,
-        onSuccess = options.onSuccess;
-
-    $(selector).each(function () {
-        var $target = $(this),
-            $parentLink = $target.closest('a');
-        toggleContentEditableParentLink($parentLink);
-        $target.on('focus', function () {
-            initPlainContentEditableOnFocus($target, field);
-        });
-        $target.on('blur', function () {
-            initPlainContentEditableOnBlur($target, field, urlBuilder, onSuccess)
-            toggleContentEditableParentLink($parentLink);
-        });
-
-    });
-}
-
-
-/**
- * Usage: add <code>data-contenteditable="%id%"</code> attribute to the element you want to be edited,
- *        add <code>data-contenteditable-target="%id%"</code> attribute to the element you want to be clicked
- *        and initialize this function. <code>%id%</code> means unique string or number, not a real element id.
- * @param {Object} options
- * @param {String} options.activatorSelector - CSS selector
- * @param {String} options.field - name of the field to update
- * @param {Function} [options.urlBuilder] - function that takes the edited jQuery element and returns url to request;
- *                                          if undefined, value will be taken from data-contenteditable-url attribute of the edited element
- * @param {Function} [options.onSuccess] - same as {@link SimpleAJAXRequestCallback}, but takes the edited jQuert element as second argument
- */
-function initPlainContentEditableWithActivator(options) {
-    var activatorSelector = options.activatorSelector,
-        field = options.field,
-        urlBuilder = options.urlBuilder,
-        onSuccess = options.onSuccess;
-
-    $(activatorSelector).each(function () {
-        var $activator = $(this);
-        $activator.on('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            var targetId = $activator.data('contenteditable-target'),
-                $target = $('[data-contenteditable=' + targetId + ']'),
-                $parentLink = $target.closest('a');
-            toggleContentEditableParentLink($parentLink);
-            $target.attr({'contenteditable': 'true'});
-            $target.on('focus', function () {
-                initPlainContentEditableOnFocus($target, field);
-            });
-            $target.on('blur', function () {
-                initPlainContentEditableOnBlur($target, field, urlBuilder, onSuccess);
-                $target.off('focus blur');
-                $target.removeAttr('contenteditable');
-                toggleContentEditableParentLink($parentLink);
-            });
-            $target.trigger('focus');
         });
     });
 }
