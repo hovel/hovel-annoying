@@ -54,26 +54,29 @@ function SimpleAJAXRequest(options) {
  * @param {String} errorMsgClass
  */
 function displayFormErrors(data, $form, errorMsgClass) {
-    if (!data) {
-        return;
-    }
-
-    function displayError($element, message) {
-        $element.after('<small class="' + errorMsgClass.replace(/\./g, ' ') + '">' + message + '</small>');
-    }
-
     if (typeof data == 'string') {
         displayError($form.find('.form-group').last(), data);
-    } else {
+    } else if (typeof data == 'object') {
         for (var fieldName in data) {
             if (data.hasOwnProperty(fieldName)) {
-                var message = data[fieldName].errors[0].message;
+                var message;
+                try {
+                    message = data[fieldName].errors[0].message;
+                } catch (ex) {
+                    continue;
+                }
                 if (fieldName == '__all__') {
                     displayError($form.find('.form-group').last(), message);
                 } else {
                     displayError($form.find('#' + data[fieldName].id), message);
                 }
             }
+        }
+    }
+
+    function displayError($element, message) {
+        if (message) {
+            $element.after('<small class="' + errorMsgClass.replace(/\./g, ' ') + '">' + message + '</small>');
         }
     }
 }
@@ -96,15 +99,20 @@ function initSimpleForm(options) {
     $form.on('submit', function (e) {
         e.preventDefault();
         $form.find(errorMsgClass).remove();
-        SimpleAJAXRequest({
+        var requestOptions = {
             url: $form.attr('action'),
             data: $form.serialize(),
-            onSuccess: options.onSuccess,
             onFail: function (data) {
                 (options.onFail || displayFormErrors)(data, $form, errorMsgClass);
-            },
-            onError: options.onError
-        });
+            }
+        }
+        if (typeof options.onSuccess == 'function') {
+            requestOptions['onSuccess'] = options.onSuccess
+        }
+        if (typeof options.onError == 'function') {
+            requestOptions['onError'] = options.onError
+        }
+        SimpleAJAXRequest(requestOptions);
     });
 }
 
@@ -129,25 +137,26 @@ function initSimpleModalForm(options) {
     $form.on('submit', function (e) {
         e.preventDefault();
         $form.find(errorMsgClass).remove();
-        SimpleAJAXRequest({
+        var requestOptions = {
             url: $form.attr('action'),
             data: $form.serialize(),
-            onSuccess: function (data) {
-                if (typeof options.onSuccess == 'function') {
-                    options.onSuccess(data);
-                    $modal.data('bs.modal').handleUpdate();
-                }
-            },
             onFail: function (data) {
                 (options.onFail || displayFormErrors)(data, $form, errorMsgClass);
                 $modal.data('bs.modal').handleUpdate();
-            },
-            onError: function () {
-                if (typeof options.onError == 'function') {
-                    options.onError();
-                    $modal.data('bs.modal').handleUpdate();
-                }
             }
-        });
+        }
+        if (typeof options.onSuccess == 'function') {
+            requestOptions['onSuccess'] = function (data) {
+                options.onSuccess(data);
+                $modal.data('bs.modal').handleUpdate();
+            }
+        }
+        if (typeof options.onError == 'function') {
+            requestOptions['onError'] = function () {
+                options.onError();
+                $modal.data('bs.modal').handleUpdate();
+            }
+        }
+        SimpleAJAXRequest(requestOptions);
     });
 }

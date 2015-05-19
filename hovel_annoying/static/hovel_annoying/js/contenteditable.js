@@ -50,15 +50,15 @@ var plainContentEditableDefaults = {
             },
             onFail: function (data) {
                 $blurred.text(originalValue);
-                if (data) {
-                    if (typeof data == 'object' && data.__all__) {
-                        alert(data.__all__.errors[0].message)
-                    } else if (typeof data == 'string') {
-                        alert(data);
-                    }
-                } else {
-                    alert('Что-то пошло не так. Попробуйте обновить страницу.');
+                var message = 'Что-то пошло не так. Попробуйте обновить страницу.';
+                if (typeof data == 'string') {
+                    message = data || message;
+                } else if (typeof data == 'object') {
+                    try {
+                        message = data.__all__.errors[0].message || message;
+                    } catch (ex) {}
                 }
+                alert(message);
             },
             onError: function () {
                 $blurred.text(originalValue);
