@@ -35,21 +35,27 @@ var plainContentEditableDefaults = {
             return;
         }
 
-        var field = config.getField($blurred);
+        var fieldName = config.getField($blurred),
+            data = {};
+        data[fieldName] = newValue;
 
         SimpleAJAXRequest({
             url: config.getURL($blurred),
-            data: config.extendData({field: field, value: newValue}, $blurred),
+            data: config.extendData(data, $blurred),
             onSuccess: function (data) {
-                $blurred.text(data[field]);
+                $blurred.text(data[fieldName]);
                 if (typeof config.onSuccess == 'function') {
                     config.onSuccess(data, $blurred);
                 }
             },
             onFail: function (data) {
                 $blurred.text(originalValue);
-                if (typeof data == 'string' && data) {
-                    alert(data);
+                if (data) {
+                    if (typeof data == 'object' && data.__all__) {
+                        alert(data.__all__.errors[0].message)
+                    } else if (typeof data == 'string') {
+                        alert(data);
+                    }
                 } else {
                     alert('Что-то пошло не так. Попробуйте обновить страницу.');
                 }
@@ -71,7 +77,8 @@ var plainContentEditableDefaults = {
  *                                        value of data-contenteditable-field attribute will be used by default
  * @param {Function} [options.getURL] - takes edited element and returns url to request;
  *                                      value of data-contenteditable-url attribute will be used by default
- * @param {Function} [options.extendData] - takes initial data as object, allows to send additional data (version, id, etc.)
+ * @param {Function} [options.extendData] - takes initial data and edited element, allows to send
+ *                                          additional data like version, etc.
  * @param {Function} [options.onSuccess] - see {@link SimpleAJAXRequest} for calling conditions;
  *                                         takes response.data and edited element
  */
