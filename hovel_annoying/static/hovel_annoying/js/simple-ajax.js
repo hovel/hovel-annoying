@@ -130,10 +130,6 @@ function initSimpleModalForm(options) {
         $form = options.$form,
         errorMsgClass = '.simple-modal-form-error.text-danger';
 
-    $modal.on('hidden.bs.modal', function () {
-        $form.trigger('reset');
-        $form.find(errorMsgClass).remove();
-    });
     $form.on('submit', function (e) {
         e.preventDefault();
         $form.find(errorMsgClass).remove();
