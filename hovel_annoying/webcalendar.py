@@ -14,6 +14,7 @@ class WebCalendar(calendar.LocaleHTMLCalendar):
     dataset_name = 'date'
     dataset_format = '%Y-%m-%d'
     mark_classname = 'marked'
+    align_height_of_months = True  # by adding empty rows
 
     def __init__(self, marked_days=None, firstweekday=calendar.MONDAY,
                  locale=b'ru_RU.UTF-8'):
@@ -49,6 +50,10 @@ class WebCalendar(calendar.LocaleHTMLCalendar):
         """
         Return a formatted month as a table.
         """
+        weeks = self.monthdays2calendar(theyear, themonth)
+        if self.align_height_of_months:
+            for i in range(len(weeks), 6):
+                weeks.append([(0, weekday) for weekday in range(1, 8)])
         v = []
         a = v.append
         a('<table border="0" cellpadding="0" cellspacing="0" class="month">')
@@ -57,7 +62,7 @@ class WebCalendar(calendar.LocaleHTMLCalendar):
         a('\n')
         a(self.formatweekheader())
         a('\n')
-        for week in self.monthdays2calendar(theyear, themonth):
+        for week in weeks:
             a(self.web_formatweek(week, themonth, theyear))
             a('\n')
         a('</table>')
