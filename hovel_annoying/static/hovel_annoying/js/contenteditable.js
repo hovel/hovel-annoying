@@ -19,6 +19,7 @@ var plainContentEditableDefaults = {
         $focused.on('keydown', function (e) {
             var $edited = $(this);
             if (e.which == 13 || e.which == 27) {
+                e.preventDefault();
                 if (e.which == 27) {
                     $edited.text($edited.data('contenteditable-original'));
                 }
