@@ -14,10 +14,6 @@ STATICFILES_FINDERS = (
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'compress_tmp')  # value doesn't matter
 
-COMPRESS_CSS_FILTERS = [
-    'hovel_annoying.compressor_utils.DebugIndependentCssAbsoluteFilter'
-]
-
 
 # ------------------- #
 # PRODUCTION SETTINGS #
