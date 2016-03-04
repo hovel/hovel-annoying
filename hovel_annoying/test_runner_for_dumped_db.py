@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from django.conf import settings
-from django.db.backends.creation import BaseDatabaseCreation
+from django.db.backends.base.creation import BaseDatabaseCreation
 from django.test.runner import DiscoverRunner
 import subprocess
 
@@ -20,7 +20,7 @@ class Runner(DiscoverRunner):
     pass
 
 
-def create_test_db(self, verbosity=1, autoclobber=False, serialize=True):
+def create_test_db(self, verbosity=1, autoclobber=False, serialize=True, keepdb=False):
         """
         Creates a test database, prompting the user for confirmation if the
         database already exists. Returns the name of the test database created.
@@ -32,12 +32,21 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True):
 
         if verbosity >= 1:
             test_db_repr = ''
+            action = 'Creating'
             if verbosity >= 2:
                 test_db_repr = " ('%s')" % test_database_name
-            print("Creating test database for alias '%s'%s..." % (
-                self.connection.alias, test_db_repr))
+            if keepdb:
+                action = "Using existing"
 
-        self._create_test_db(verbosity, autoclobber)
+            print("%s test database for alias '%s'%s..." % (
+                action, self.connection.alias, test_db_repr))
+
+        # We could skip this call if keepdb is True, but we instead
+        # give it the keepdb param. This is to handle the case
+        # where the test DB doesn't exist, in which case we need to
+        # create it, then just not destroy it. If we instead skip
+        # this, we will get an exception.
+        self._create_test_db(verbosity, autoclobber, keepdb)
 
         self.connection.close()
         settings.DATABASES[self.connection.alias]["NAME"] = test_database_name
@@ -46,15 +55,16 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True):
         # ---------------------- SPECIAL FUNCTIONALITY ---------------------- #
 
         # Load sql dump
-        cmd = ['mysql', '-u', self.connection.settings_dict['USER']]
-        if self.connection.settings_dict['PASSWORD']:
-            cmd.append('-p' + self.connection.settings_dict['PASSWORD'])
-        if self.connection.settings_dict['HOST']:
-            cmd.append('-h')
-            cmd.append(self.connection.settings_dict['HOST'])
-        cmd.append(test_database_name)
-        with open(self.connection.settings_dict['TEST']['DUMP'], 'r') as dump:
-            subprocess.call(cmd, stdin=dump)
+        if not keepdb:
+            cmd = ['mysql', '-u', self.connection.settings_dict['USER']]
+            if self.connection.settings_dict['PASSWORD']:
+                cmd.append('-p' + self.connection.settings_dict['PASSWORD'])
+            if self.connection.settings_dict['HOST']:
+                cmd.append('-h')
+                cmd.append(self.connection.settings_dict['HOST'])
+            cmd.append(test_database_name)
+            with open(self.connection.settings_dict['TEST']['DUMP'], 'r') as dump:
+                subprocess.call(cmd, stdin=dump)
 
         # ------------------------------------------------------------------- #
 
@@ -66,8 +76,7 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True):
             verbosity=max(verbosity - 1, 0),
             interactive=False,
             database=self.connection.alias,
-            test_database=True,
-            test_flush=True,
+            test_flush=not keepdb,
         )
 
         # We then serialize the current state of the database into a string
