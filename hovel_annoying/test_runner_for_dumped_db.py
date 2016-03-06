@@ -56,6 +56,7 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True, keepdb=
 
         # Load sql dump
         if not keepdb:
+            keepdb = True
             cmd = ['mysql', '-u', self.connection.settings_dict['USER']]
             if self.connection.settings_dict['PASSWORD']:
                 cmd.append('-p' + self.connection.settings_dict['PASSWORD'])
