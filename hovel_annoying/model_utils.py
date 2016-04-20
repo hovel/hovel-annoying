@@ -2,6 +2,8 @@
 from __future__ import unicode_literals
 import os
 import uuid
+from collections import namedtuple
+
 from django.conf import settings
 from django.utils.deconstruct import deconstructible
 from django.utils.encoding import force_text
@@ -30,3 +32,6 @@ class FilePathGenerator(object):
                 os.makedirs(upload_path_media)
                 print('\nCreate directory: "{}".\n'.format(upload_path_media))
         return os.path.join(upload_path, uuid_filename)
+
+
+ChoiceItem = namedtuple('ChoiceItem', ['value', 'name'])
