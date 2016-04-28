@@ -20,6 +20,18 @@ class StatusJsonResponse(HttpResponse):
         super(StatusJsonResponse, self).__init__(content=content, **kwargs)
 
 
+class PositiveJsonResponse(StatusJsonResponse):
+    def __init__(self, data='', encoder=DjangoJSONEncoder, **kwargs):
+        super(PositiveJsonResponse, self).__init__(
+            success=True, data=data, encoder=encoder, **kwargs)
+
+
+class NegativeJsonResponse(StatusJsonResponse):
+    def __init__(self, data='', encoder=DjangoJSONEncoder, **kwargs):
+        super(NegativeJsonResponse, self).__init__(
+            success=False, data=data, encoder=encoder, **kwargs)
+
+
 def form_errors_to_dict(form, escape_html=False):
     errors = {}
     for field_name, field_error_list in form.errors.items():
