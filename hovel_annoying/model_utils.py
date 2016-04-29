@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 import os
 import uuid
-from collections import namedtuple
 
 from django.conf import settings
 from django.utils.deconstruct import deconstructible
@@ -34,4 +33,7 @@ class FilePathGenerator(object):
         return os.path.join(upload_path, uuid_filename)
 
 
-ChoiceItem = namedtuple('ChoiceItem', ['value', 'name'])
+def get_choice_name(choices, value):
+    for choice in choices:
+        if choice[0] == value:
+            return choice[1]

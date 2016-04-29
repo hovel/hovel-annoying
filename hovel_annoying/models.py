@@ -9,14 +9,17 @@ from hovel_annoying.model_utils import ChoiceItem, FilePathGenerator
 class TempArchiveBase(models.Model):
     """Temporary archive for batch uploading and processing files"""
 
-    STATUS_PENDING = ChoiceItem('pending', 'Ожидает обработки')
-    STATUS_PROCESSING = ChoiceItem('processing', 'В процессе обработки')
-    STATUS_SUCCESS = ChoiceItem('success', 'Успешно обработан')
-    STATUS_ERROR = ChoiceItem('error', 'Ошибка при обработке')
-    STATUSES = (STATUS_PENDING, STATUS_PROCESSING, STATUS_SUCCESS, STATUS_ERROR)
+    STATUS_PENDING = 'pending'
+    STATUS_PROCESSING = 'processing'
+    STATUS_SUCCESS = 'success'
+    STATUS_ERROR = 'error'
+    STATUSES = ((STATUS_PENDING, 'Ожидает обработки'),
+                (STATUS_PROCESSING, 'В процессе обработки'),
+                (STATUS_SUCCESS, 'Успешно обработан'),
+                (STATUS_ERROR, 'Ошибка при обработке'))
 
     status = models.CharField(verbose_name='статус', max_length=50,
-                              choices=STATUSES, default=STATUS_PENDING.value)
+                              choices=STATUSES, default=STATUS_PENDING)
     archive = models.FileField(verbose_name='файл архива', blank=True,
                                upload_to=FilePathGenerator(
                                    to='temp_archives/'))
