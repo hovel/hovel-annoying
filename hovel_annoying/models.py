@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db import models
-from hovel_annoying.model_utils import ChoiceItem, FilePathGenerator
+from hovel_annoying.model_utils import FilePathGenerator
 
 
 class TempArchiveBase(models.Model):
@@ -20,6 +20,8 @@ class TempArchiveBase(models.Model):
 
     status = models.CharField(verbose_name='статус', max_length=50,
                               choices=STATUSES, default=STATUS_PENDING)
+    status_verbose = models.TextField(verbose_name='подробный статус',
+                                      blank=True)
     archive = models.FileField(verbose_name='файл архива', blank=True,
                                upload_to=FilePathGenerator(
                                    to='temp_archives/'))
