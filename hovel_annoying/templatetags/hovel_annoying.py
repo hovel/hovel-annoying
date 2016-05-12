@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+import operator
 from django import template
 
 register = template.Library()
@@ -13,3 +15,9 @@ def highlight_menu(context, url):
 @register.filter
 def format_price(price):
     return '{0:,}'.format(int(price)).replace(',', ' ')
+
+
+@register.filter
+def sort_by_field(iterable, field='id'):
+    return sorted(iterable, key=operator.attrgetter(field.lstrip('-')),
+                  reverse=field.startswith('-'))
