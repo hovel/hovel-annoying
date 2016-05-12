@@ -19,5 +19,8 @@ def format_price(price):
 
 @register.filter
 def sort_by_field(iterable, field='id'):
+    if not iterable:
+        return iterable
+
     return sorted(iterable, key=operator.attrgetter(field.lstrip('-')),
                   reverse=field.startswith('-'))
