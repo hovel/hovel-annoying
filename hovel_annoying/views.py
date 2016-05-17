@@ -1,14 +1,66 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from django import forms
 from django.core.exceptions import PermissionDenied, ImproperlyConfigured
-from django.forms.models import modelform_factory
 from django.http.response import Http404
+from django.shortcuts import get_object_or_404
 from django.views.generic import View
+from django.views.generic.edit import BaseFormView
 from django.utils.translation import ugettext as _
-from hovel_annoying.json_utils import StatusJsonResponse, form_errors_to_dict
+from hovel_annoying.json_utils import form_errors_to_dict, \
+    NegativeJsonResponse, PositiveJsonResponse
 
 
-class BasePartialUpdateView(View):
+class StatusJsonMixin(object):
+
+    def form_valid(self, form):
+        return PositiveJsonResponse(self.format_success_response())
+
+    def format_success_response(self):
+        return ''
+
+    def form_invalid(self, form):
+        return NegativeJsonResponse(self.format_fail_response(form))
+
+    def format_fail_response(self, form):
+        return form_errors_to_dict(form)
+
+
+class BasePartialDetailView(StatusJsonMixin, BaseFormView):
+    """
+    Allows to get data from the certain fields of the model via Ajax.
+    Usage: client.post('/mymodel/data', {'id': 1, 'fields': ['f1', 'f2']})
+    """
+
+    # mandatory
+    model = None
+    allowed_fields = []
+
+    # do not change
+    http_method_names = ['post']
+    form_class = forms.Form
+
+    def get_form(self, form_class=None):
+        form = super(BasePartialDetailView, self).get_form(form_class)
+        form.fields['id'] = forms.IntegerField()
+        form.fields['fields'] = forms.MultipleChoiceField(
+            choices=[(f, f) for f in self.allowed_fields])
+        return form
+
+    def get_object(self, form):
+        return get_object_or_404(self.model, id=form.cleaned_data['id'])
+
+    def form_valid(self, form):
+        obj = self.get_object(form)
+
+        data = {}
+        for field in form.cleaned_data['fields']:
+            data[field] = getattr(obj, field)
+
+        return super(BasePartialDetailView, self).form_valid(form)
+
+
+class BasePartialUpdateView(StatusJsonMixin, View):
     # mandatory
     model = None
     allowed_fields = []
@@ -68,7 +120,8 @@ class BasePartialUpdateView(View):
                             if fld in self.get_allowed_fields()]
         if not self.form_fields:
             raise PermissionDenied()
-        PartialUpdateForm = modelform_factory(self.model, fields=self.form_fields)
+        PartialUpdateForm = forms.modelform_factory(self.model,
+                                                    fields=self.form_fields)
         return PartialUpdateForm(**self.get_form_kwargs())
 
     def get_form_kwargs(self):
@@ -95,7 +148,7 @@ class BasePartialUpdateView(View):
         self.before_object_save()
         self.object.save()
         self.after_object_save()
-        return StatusJsonResponse(True, self.format_success_response())
+        return super(BasePartialUpdateView, self).form_valid(form)
 
     def before_object_save(self):
         pass
@@ -113,9 +166,3 @@ class BasePartialUpdateView(View):
             None, 'Объект устарел. Обновите страницу и попробуйте снова.'
         )
         return self.form_invalid(form)
-
-    def form_invalid(self, form):
-        return StatusJsonResponse(False, self.format_fail_response(form))
-
-    def format_fail_response(self, form):
-        return form_errors_to_dict(form)
