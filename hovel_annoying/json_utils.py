@@ -33,12 +33,24 @@ class NegativeJsonResponse(StatusJsonResponse):
 
 
 def form_errors_to_dict(form, escape_html=False):
-    errors = {}
-    for field_name, field_error_list in form.errors.items():
-        errors[field_name] = {
-            'errors': field_error_list.get_json_data(escape_html)
+    error_dict = {}
+    for field, errors in form.errors.items():
+        error_dict[field] = {
+            'errors': errors.get_json_data(escape_html)
         }
-        if field_name != NON_FIELD_ERRORS:
-            errors[field_name]['id'] = form[field_name].id_for_label
-            errors[field_name]['label'] = form[field_name].label
-    return errors
+        if field != NON_FIELD_ERRORS:
+            error_dict[field]['id'] = form[field].id_for_label
+            error_dict[field]['label'] = form[field].label
+    return error_dict
+
+
+def form_errors_to_string(form):
+    error_list = []
+    for field, errors in form.errors.items():
+        if field != NON_FIELD_ERRORS:
+            field_name = '{}: '.format(form[field].label)
+        else:
+            field_name = ''
+        for error in errors:
+            error_list.append('{}{}'.format(field_name, error))
+    return '\n'.join(error_list)
