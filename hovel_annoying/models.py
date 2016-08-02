@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import hashlib
+
 from django.conf import settings
 from django.db import models
 from hovel_annoying.model_utils import FilePathGenerator
@@ -31,8 +33,29 @@ class TempArchiveBase(models.Model):
                                   blank=True, null=True)
     load_datetime = models.DateTimeField(verbose_name='дата и время загрузки',
                                          blank=True, null=True)
+    size = models.BigIntegerField(verbose_name='размер', blank=True, null=True)
+    hash = models.CharField(verbose_name='хэш', max_length=128, blank=True)
 
     class Meta:
         abstract = True
         verbose_name = 'временный архив'
         verbose_name_plural = 'временные архивы'
+
+    def get_size(self, strict=False):
+        if self.archive and (strict or not self.size):
+            size = self.archive.file.size
+            if size != self.size:
+                self.size = size
+                self.save()
+        return self.size
+
+    def get_hash(self, strict=False):
+        if self.archive and (strict or not self.hash):
+            hash = hashlib.md5()
+            for chunk in self.archive.chunks(chunk_size=8192):
+                hash.update(chunk)
+            hexdigest = hash.hexdigest()
+            if hexdigest != self.hash:
+                self.hash = hexdigest
+                self.save()
+        return self.hash
