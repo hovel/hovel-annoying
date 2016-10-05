@@ -3,7 +3,7 @@
     var magnifier = new function () {
         var self = this;
 
-        self.ratioScale = [1.5, 2, 3];
+        self.ratioScale = window.scalableMediaSourcesRatioScale || [1.5, 2, 3];
 
         self.run = function () {
             $('.scalable, .scalable-bg').each(function () {
