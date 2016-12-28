@@ -43,10 +43,13 @@ class TempArchiveBase(models.Model):
 
     def get_size(self, strict=False):
         if self.archive and (strict or not self.size):
-            size = self.archive.file.size
-            if size != self.size:
-                self.size = size
-                self.save()
+            try:
+                size = self.archive.file.size
+                if size != self.size:
+                    self.size = size
+                    self.save()
+            except IOError:
+                return 0
         return self.size
 
     def get_hash(self, strict=False):
