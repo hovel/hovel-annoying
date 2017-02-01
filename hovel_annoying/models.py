@@ -33,7 +33,7 @@ class TempArchiveBase(models.Model):
                                upload_to=FilePathGenerator(
                                    to='temp_archives/'))
     load_user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                  on_delete=models.CASCADE,
+                                  on_delete=models.SET_NULL,
                                   verbose_name='кто загрузил',
                                   blank=True, null=True)
     load_datetime = models.DateTimeField(verbose_name='дата и время загрузки',
