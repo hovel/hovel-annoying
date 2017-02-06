@@ -5,6 +5,8 @@ import hashlib
 
 from django.conf import settings
 from django.db import models
+from django.utils.formats import localize
+
 from hovel_annoying.model_utils import FilePathGenerator
 
 
@@ -74,3 +76,25 @@ class TempArchiveBase(models.Model):
             except IOError:
                 return ''
         return self.hash
+
+    def get_siblings(self):
+        # Somethings like `self.related_object.temp_archives.all()`
+        return NotImplemented
+
+    def get_older_siblings(self):
+        return self.get_siblings() \
+            .filter(load_datetime__lte=self.load_datetime) \
+            .exclude(pk__gte=self.pk)
+
+    def was_loaded_before(self, update_status=False):
+        for old in self.get_older_siblings():
+            if old.get_size() == self.get_size() and \
+                    old.get_hash() == self.get_hash():
+                if update_status:
+                    self.status = self.STATUS_ERROR
+                    self.status_verbose = \
+                        'Архив загружен повторно. Предыдущая загрузка была в {}.' \
+                        ''.format(localize(old.load_datetime))
+                    self.save()
+                return True
+        return False
