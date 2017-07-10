@@ -93,7 +93,7 @@ class TempArchiveBase(models.Model):
                 if update_status:
                     self.status = self.STATUS_ERROR
                     self.status_verbose = \
-                        'Архив загружен повторно. Предыдущая загрузка была в {}.' \
+                        'Архив загружен повторно. Предыдущая загрузка была {}.' \
                         ''.format(localize(old.load_datetime))
                     self.save()
                 return True
