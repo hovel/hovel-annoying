@@ -17,20 +17,26 @@
  * @param {Function} [options.onError] - called if connection was unsuccessful
  */
 function SimpleAJAXRequest(options) {
+    var useFormData = (
+        typeof window.FormData !== 'undefined'
+        && options.data instanceof FormData
+    );
     $.ajax({
         url: options.url,
-        data: options.data || '',
+        data: options.data || (useFormData ? new FormData() : ''),
         dataType: 'json',
         method: 'POST',
+        processData: !useFormData,
+        contentType: useFormData ? false : 'application/x-www-form-urlencoded; charset=UTF-8',
         success: function (response, textStatus, jqXHR) {
-            if (response.status == 'success') {
-                if (typeof options.onSuccess == 'function') {
+            if (response.status === 'success') {
+                if (typeof options.onSuccess === 'function') {
                     options.onSuccess(response.data);
                 }
-            } else if (response.status == 'fail') {
-                if (typeof options.onFail == 'function') {
+            } else if (response.status === 'fail') {
+                if (typeof options.onFail === 'function') {
                     options.onFail(response.data);
-                } else if (typeof response.data == 'string' && response.data) {
+                } else if (typeof response.data === 'string' && response.data) {
                     alert(response.data);
                 } else {
                     alert('Что-то пошло не так. Попробуйте обновить страницу.');
@@ -38,7 +44,7 @@ function SimpleAJAXRequest(options) {
             }
         },
         error: function (jqXHR, textStatus, errorThrown) {
-            if (typeof options.onError == 'function') {
+            if (typeof options.onError === 'function') {
                 options.onError();
             } else {
                 alert('Что-то пошло не так. Попробуйте обновить страницу.');
@@ -54,9 +60,9 @@ function SimpleAJAXRequest(options) {
  * @param {String} errorMsgClass
  */
 function displayFormErrors(data, $form, errorMsgClass) {
-    if (typeof data == 'string') {
+    if (typeof data === 'string') {
         displayError($form.find('.form-group').last(), data);
-    } else if (typeof data == 'object') {
+    } else if (typeof data === 'object') {
         for (var fieldName in data) {
             if (data.hasOwnProperty(fieldName)) {
                 var message;
@@ -65,7 +71,7 @@ function displayFormErrors(data, $form, errorMsgClass) {
                 } catch (ex) {
                     continue;
                 }
-                if (fieldName == '__all__') {
+                if (fieldName === '__all__') {
                     displayError($form.find('.form-group').last(), message);
                 } else {
                     displayError($form.find('#' + data[fieldName].id), message);
@@ -85,6 +91,7 @@ function displayFormErrors(data, $form, errorMsgClass) {
 /**
  * @param {Object} options
  * @param {jQuery} options.$form - form inside $modal
+ * @param {Boolean} [options.useFormData] - send FormData instead of string
  * @param {Function} [options.onSuccess] - see {@link SimpleAJAXRequest}
  * @param {Function} [options.onFail] - see {@link SimpleAJAXRequest} for calling
  *                                      conditions; takes response.data, $form
@@ -101,15 +108,15 @@ function initSimpleForm(options) {
         $form.find(errorMsgClass).remove();
         var requestOptions = {
             url: $form.attr('action'),
-            data: $form.serialize(),
+            data: options.useFormData ? new FormData($form[0]) : $form.serialize(),
             onFail: function (data) {
                 (options.onFail || displayFormErrors)(data, $form, errorMsgClass);
             }
         }
-        if (typeof options.onSuccess == 'function') {
+        if (typeof options.onSuccess === 'function') {
             requestOptions['onSuccess'] = options.onSuccess
         }
-        if (typeof options.onError == 'function') {
+        if (typeof options.onError === 'function') {
             requestOptions['onError'] = options.onError
         }
         SimpleAJAXRequest(requestOptions);
@@ -121,6 +128,7 @@ function initSimpleForm(options) {
  * @param {Object} options
  * @param {jQuery} options.$modal - modal window
  * @param {jQuery} options.$form - see {@link initSimpleForm}
+ * @param {Boolean} [options.useFormData] - see {@link initSimpleForm}
  * @param {Function} [options.onSuccess] - see {@link initSimpleForm}
  * @param {Function} [options.onFail] - see {@link initSimpleForm}
  * @param {Function} [options.onError] - see {@link initSimpleForm}
@@ -135,19 +143,19 @@ function initSimpleModalForm(options) {
         $form.find(errorMsgClass).remove();
         var requestOptions = {
             url: $form.attr('action'),
-            data: $form.serialize(),
+            data: options.useFormData ? new FormData($form[0]) : $form.serialize(),
             onFail: function (data) {
                 (options.onFail || displayFormErrors)(data, $form, errorMsgClass);
                 $modal.data('bs.modal').handleUpdate();
             }
         }
-        if (typeof options.onSuccess == 'function') {
+        if (typeof options.onSuccess === 'function') {
             requestOptions['onSuccess'] = function (data) {
                 options.onSuccess(data);
                 $modal.data('bs.modal').handleUpdate();
             }
         }
-        if (typeof options.onError == 'function') {
+        if (typeof options.onError === 'function') {
             requestOptions['onError'] = function () {
                 options.onError();
                 $modal.data('bs.modal').handleUpdate();
