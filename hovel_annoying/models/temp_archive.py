@@ -14,6 +14,10 @@ class TempArchiveBaseQuerySet(models.QuerySet):
     def not_cleaned(self):
         return self.filter(clean_datetime__isnull=True)
 
+    def not_processed(self):
+        return self.filter(status__in=[self.model.STATUS_PENDING,
+                                       self.model.STATUS_PROCESSING])
+
 
 class TempArchiveBase(models.Model):
     """Temporary archive for batch uploading and processing files"""
