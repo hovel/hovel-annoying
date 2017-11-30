@@ -49,10 +49,13 @@ class ProcessTempArchiveBase(object):
         except Exception as e:
             msg = 'Error occurred during processing of {}: {}' \
                   ''.format(self.descr, e)
+            # for exceptions from `subprocess` module
             output = getattr(e, 'output', None)
             if output:
                 msg = '{}\n{}'.format(msg, output.decode('utf8'))
             self.logger.exception(msg)
+            self.instance.status = self.model.STATUS_ERROR
+            self.instance.save()
             raise
         finally:
             os.remove(self.tmp_file)
