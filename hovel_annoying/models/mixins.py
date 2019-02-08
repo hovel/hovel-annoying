@@ -2,13 +2,14 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.utils.functional import cached_property
 
 
 class OldInstanceMixin(models.Model):
     class Meta:
         abstract = True
 
-    @property
+    @cached_property
     def old_instance(self):
         try:
             if not self.pk:
