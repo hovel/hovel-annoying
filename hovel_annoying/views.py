@@ -88,10 +88,7 @@ class BasePartialUpdateView(StatusJsonMixin, View):
 
         pk = self.kwargs.get(self.pk_url_kwarg, None)
         if pk is not None:
-            if self.versioning:
-                queryset = queryset.select_for_update().filter(pk=pk)
-            else:
-                queryset = queryset.filter(pk=pk)
+            queryset = queryset.select_for_update().filter(pk=pk)
         else:
             raise AttributeError("View {} must be called with either an "
                                  "object pk.".format(self.__class__.__name__))
