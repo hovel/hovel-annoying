@@ -39,7 +39,7 @@ class ProcessTempArchiveBase(object):
             self.instance.load_datetime = timezone.now()
             self.instance.save()
 
-        if self.instance.was_loaded_before(update_status=True):
+        if self.instance_was_loaded_before():
             return
 
         _, self.tmp_file = tempfile.mkstemp()
@@ -62,6 +62,9 @@ class ProcessTempArchiveBase(object):
             shutil.rmtree(self.tmp_dir)
 
         self.logger.info('Finish processing of {}.'.format(self.descr))
+
+    def instance_was_loaded_before(self):
+        return self.instance.was_loaded_before(update_status=True)
 
     def process(self):
         return NotImplemented
