@@ -9,6 +9,8 @@ import tempfile
 from django.utils import timezone
 
 from hovel_annoying.models import TempArchiveBase
+from hovel_annoying.utils.archive import extract_archive
+from hovel_annoying.utils.storage import get_file
 
 
 class ProcessTempArchiveBase(object):
@@ -22,49 +24,87 @@ class ProcessTempArchiveBase(object):
         self.logger = logging.getLogger(logger_name)
 
     def run(self, instance_id):
-        self.descr = '{} {}'.format(self.model.__name__, instance_id)
-
-        self.logger.info('Start processing of {}.'.format(self.descr))
-
-        locked = self.model.objects \
-            .filter(id=instance_id, status=self.model.STATUS_PENDING) \
-            .update(status=self.model.STATUS_PROCESSING)
-        if not locked:
-            self.logger.error('{} not found or already locked or processed.'
-                              ''.format(self.descr))
-            return
-
-        self.instance = self.model.objects.get(id=instance_id)
-        if not self.instance.load_datetime:
-            self.instance.load_datetime = timezone.now()
-            self.instance.save()
-
-        if self.instance_was_loaded_before():
-            return
-
-        _, self.tmp_file = tempfile.mkstemp()
-        self.tmp_dir = tempfile.mkdtemp()
+        self.descr = self.format_descr(instance_id)
+        self.logger.info('Start processing of {}'.format(self.descr))
+        self.temp_paths = []
         try:
-            self.process()
+            self.instance = self.lock_instance(instance_id)
+            if self.instance is None:
+                return
+
+            if not self.check_instance():
+                return
+
+            self.tmp_dir = self.get_and_extract_archive()
+            if self.tmp_dir is None:
+                return
+
+            self.save_content_list()
+
+            self.process_extracted()
         except Exception as e:
-            msg = 'Error occurred during processing of {}: {}' \
-                  ''.format(self.descr, e)
-            # for exceptions from `subprocess` module
-            output = getattr(e, 'output', None)
-            if output:
-                msg = '{}\n{}'.format(msg, output.decode('utf8'))
-            self.logger.exception(msg)
-            self.instance.status = self.model.STATUS_ERROR
-            self.instance.save()
+            try:
+                self.instance.status = self.instance.STATUS_ERROR
+                self.instance.save()
+                self.logger.exception('Cannot process {}'.format(self.descr))
+            except Exception as ee:
+                pass
             raise
         finally:
-            os.remove(self.tmp_file)
-            shutil.rmtree(self.tmp_dir)
+            self.cleanup()
+            self.logger.info('Finish processing of {}.'.format(self.descr))
 
-        self.logger.info('Finish processing of {}.'.format(self.descr))
+    def format_descr(self, instance_id):
+        descr = '{} {}'.format(self.model._meta.label, instance_id)
+        return descr
 
-    def instance_was_loaded_before(self):
-        return self.instance.was_loaded_before(update_status=True)
+    def lock_instance(self, instance_id):
+        lock = self.model.objects \
+            .filter(id=instance_id, status=self.model.STATUS_PENDING) \
+            .update(status=self.model.STATUS_PROCESSING,
+                    lock_datetime=timezone.now())
+        if lock == 1:
+            instance = self.model.get(id=instance_id)
+            return instance
+        else:
+            self.logger.error('Cannot lock {}'.format(self.descr))
+            return None
 
-    def process(self):
-        return NotImplemented
+    def check_instance(self):
+        return True
+
+    def get_and_extract_archive(self):
+        _, archive_path = tempfile.mkstemp()
+        self.temp_paths.append(archive_path)
+
+        archive_path = get_file(self.instance.archive, archive_path)
+
+        target_directory = tempfile.mkdtemp()
+        self.temp_paths.append(target_directory)
+
+        if extract_archive(archive_path, target_directory):
+            return target_directory
+        else:
+            self.instance.status = self.instance.STATUS_ERROR
+            self.instance.save()
+            self.logger.error('Cannot extract {}'.format(self.descr))
+            return None
+
+    def save_content_list(self):
+        content_list = []
+        for dirpath, dirnames, filenames in os.walk(self.tmp_dir):
+            for filename in filenames:
+                path = os.path.join(dirpath, filename)
+                content_list.append(path)
+        self.instance.content_list = '\n'.join(content_list)
+        self.instance.save()
+
+    def process_extracted(self):
+        raise NotImplementedError()
+
+    def cleanup(self):
+        for temp_path in self.temp_paths:
+            if os.path.isdir(temp_path):
+                shutil.rmtree(temp_path)
+            else:
+                os.remove(temp_path)

@@ -25,29 +25,40 @@ class TempArchiveBase(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_PROCESSING = 'processing'
     STATUS_SUCCESS = 'success'
+    STATUS_WARNING = 'warning'
     STATUS_ERROR = 'error'
     STATUSES = ((STATUS_PENDING, 'Ожидает обработки'),
                 (STATUS_PROCESSING, 'В процессе обработки'),
                 (STATUS_SUCCESS, 'Успешно обработан'),
+                (STATUS_WARNING, 'Обработан с замечаниями'),
                 (STATUS_ERROR, 'Ошибка при обработке'))
 
-    status = models.CharField(verbose_name='статус', max_length=50,
-                              choices=STATUSES, default=STATUS_PENDING)
-    status_verbose = models.TextField(verbose_name='подробный статус',
-                                      blank=True)
-    archive = models.FileField(verbose_name='файл архива', blank=True,
-                               upload_to=FilePathGenerator(
-                                   to='temp_archives/'))
-    load_user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                                  on_delete=models.SET_NULL,
-                                  verbose_name='кто загрузил',
-                                  blank=True, null=True)
-    load_datetime = models.DateTimeField(verbose_name='дата и время загрузки',
-                                         blank=True, null=True)
-    clean_datetime = models.DateTimeField(verbose_name='дата и время очистки',
-                                          blank=True, null=True)
-    size = models.BigIntegerField(verbose_name='размер', blank=True, null=True)
-    hash = models.CharField(verbose_name='хэш', max_length=128, blank=True)
+    status = models.CharField(
+        verbose_name='статус', max_length=50, choices=STATUSES,
+        default=STATUS_PENDING)
+    status_verbose = models.TextField(
+        verbose_name='подробный статус', blank=True, default='')
+    archive = models.FileField(
+        verbose_name='файл архива', blank=True,
+        upload_to=FilePathGenerator(to='temp_archives/'), default='')
+    content_list = models.TextField(
+        verbose_name='список содержимого', blank=True, default='')
+    load_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        verbose_name='кто загрузил', blank=True, null=True, default=None)
+    load_datetime = models.DateTimeField(
+        verbose_name='дата и время загрузки', blank=True, null=True,
+        default=None)
+    lock_datetime = models.DateTimeField(
+        verbose_name='дата и время блокировки', blank=True, null=True,
+        default=None)
+    clean_datetime = models.DateTimeField(
+        verbose_name='дата и время очистки', blank=True, null=True,
+        default=None)
+    size = models.BigIntegerField(
+        verbose_name='размер', blank=True, null=True, default=None)
+    hash = models.CharField(
+        verbose_name='хэш', max_length=128, blank=True, default='')
 
     objects = TempArchiveBaseQuerySet.as_manager()
 
