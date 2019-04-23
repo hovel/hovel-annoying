@@ -8,7 +8,6 @@ import tempfile
 
 from django.utils import timezone
 
-from hovel_annoying.models import TempArchiveBase
 from hovel_annoying.utils.archive import extract_archive, decode_zip_path
 from hovel_annoying.utils.storage import get_file
 
@@ -19,7 +18,6 @@ class ProcessTempArchiveBase(object):
 
     def __init__(self):
         super(ProcessTempArchiveBase, self).__init__()
-        assert issubclass(self.model, TempArchiveBase)
         logger_name = self.logger_name or __name__
         self.logger = logging.getLogger(logger_name)
 
@@ -44,13 +42,13 @@ class ProcessTempArchiveBase(object):
 
             self.process_extracted()
         except Exception as e:
+            self.logger.exception('Cannot process {}'.format(self.descr))
             try:
-                self.instance.status = self.instance.STATUS_ERROR
+                self.instance.status = self.model.STATUS_ERROR
                 self.instance.save()
-                self.logger.exception('Cannot process {}'.format(self.descr))
             except Exception as ee:
                 pass
-            raise
+            raise e
         finally:
             self.cleanup()
             self.logger.info('Finish processing of {}.'.format(self.descr))
@@ -65,7 +63,7 @@ class ProcessTempArchiveBase(object):
             .update(status=self.model.STATUS_PROCESSING,
                     lock_datetime=timezone.now())
         if lock == 1:
-            instance = self.model.get(id=instance_id)
+            instance = self.model.objects.get(id=instance_id)
             return instance
         else:
             self.logger.error('Cannot lock {}'.format(self.descr))
@@ -86,7 +84,7 @@ class ProcessTempArchiveBase(object):
         if extract_archive(archive_path, target_directory):
             return target_directory
         else:
-            self.instance.status = self.instance.STATUS_ERROR
+            self.instance.status = self.model.STATUS_ERROR
             self.instance.save()
             self.logger.error('Cannot extract {}'.format(self.descr))
             return None
