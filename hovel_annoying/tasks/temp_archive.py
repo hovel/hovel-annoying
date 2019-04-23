@@ -35,7 +35,8 @@ class ProcessTempArchiveBase(object):
             if not self.check_instance():
                 return
 
-            self.tmp_dir = self.get_and_extract_archive()
+            archive_path = self.get_archive()
+            self.tmp_dir = self.extract_archive(archive_path)
             if self.tmp_dir is None:
                 return
 
@@ -73,15 +74,15 @@ class ProcessTempArchiveBase(object):
     def check_instance(self):
         return True
 
-    def get_and_extract_archive(self):
+    def get_archive(self):
         _, archive_path = tempfile.mkstemp()
         self.temp_paths.append(archive_path)
-
         archive_path = get_file(self.instance.archive, archive_path)
+        return archive_path
 
+    def extract_archive(self, archive_path):
         target_directory = tempfile.mkdtemp()
         self.temp_paths.append(target_directory)
-
         if extract_archive(archive_path, target_directory):
             return target_directory
         else:

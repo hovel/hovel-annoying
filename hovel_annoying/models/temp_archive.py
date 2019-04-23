@@ -5,6 +5,7 @@ import hashlib
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 from django.utils.formats import localize
 
 from hovel_annoying.model_utils import FilePathGenerator
@@ -102,6 +103,8 @@ class TempArchiveBase(models.Model):
             .exclude(pk__gte=self.pk)
 
     def was_loaded_before(self, update_status=False):
+        if not self.load_datetime:
+            self.load_datetime = timezone.now()
         for old in self.get_older_siblings():
             if old.get_size() == self.get_size() and \
                     old.get_hash() == self.get_hash():
