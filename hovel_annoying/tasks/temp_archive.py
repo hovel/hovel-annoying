@@ -9,7 +9,7 @@ import tempfile
 from django.utils import timezone
 
 from hovel_annoying.models import TempArchiveBase
-from hovel_annoying.utils.archive import extract_archive
+from hovel_annoying.utils.archive import extract_archive, decode_zip_path
 from hovel_annoying.utils.storage import get_file
 
 
@@ -96,7 +96,9 @@ class ProcessTempArchiveBase(object):
         for dirpath, dirnames, filenames in os.walk(self.tmp_dir):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
-                content_list.append(path)
+                decoded = decode_zip_path(path)
+                relpath = os.path.relpath(decoded, self.tmp_dir)
+                content_list.append(relpath)
         self.instance.content_list = '\n'.join(content_list)
         self.instance.save()
 
