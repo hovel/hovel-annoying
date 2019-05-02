@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 
+from django.utils.encoding import force_text
 from django.utils.six import text_type
 
 
@@ -19,7 +20,10 @@ def check_extracted_archive(archive_path, target_directory):
     for command, correction in commands:
         try:
             out = subprocess.check_output(command)
-            lines = [l for l in out.splitlines() if not l.endswith(os.sep)]
+            out_text = force_text(out)
+            sep_text = force_text(os.sep)
+            lines = [l for l in out_text.splitlines()
+                     if not l.endswith(sep_text)]
             number_of_archived_files = len(lines) - correction
         except subprocess.CalledProcessError as e:
             continue
