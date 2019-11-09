@@ -31,15 +31,14 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True, keepdb=
         test_database_name = self._get_test_db_name()
 
         if verbosity >= 1:
-            test_db_repr = ''
             action = 'Creating'
-            if verbosity >= 2:
-                test_db_repr = " ('%s')" % test_database_name
             if keepdb:
                 action = "Using existing"
 
-            print("%s test database for alias '%s'%s..." % (
-                action, self.connection.alias, test_db_repr))
+            print("%s test database for alias %s..." % (
+                action,
+                self._get_database_display_str(verbosity, test_database_name),
+            ))
 
         # We could skip this call if keepdb is True, but we instead
         # give it the keepdb param. This is to handle the case
@@ -77,7 +76,7 @@ def create_test_db(self, verbosity=1, autoclobber=False, serialize=True, keepdb=
             verbosity=max(verbosity - 1, 0),
             interactive=False,
             database=self.connection.alias,
-            test_flush=not keepdb,
+            run_syncdb=True,
         )
 
         # We then serialize the current state of the database into a string
