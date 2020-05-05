@@ -11,7 +11,8 @@ def check_extracted_archive(archive_path, target_directory):
         number_of_extracted_files += len(filenames)
 
     number_of_archived_files = None
-    commands = [(['unzip', '-l', archive_path], 5),
+    commands = [(['unrar', 'l', archive_path], 11),
+                (['unzip', '-l', archive_path], 5),
                 (['lsar', archive_path], 1)]
     for command, correction in commands:
         try:
@@ -30,7 +31,10 @@ def check_extracted_archive(archive_path, target_directory):
 
 
 def extract_archive(archive_path, target_directory):
-    commands = [['unzip', '-o', '-d', target_directory, archive_path],
+    # ensure trailing slash
+    target_directory = os.path.join(target_directory, '')
+    commands = [['unrar', 'x', archive_path, target_directory],
+                ['unzip', '-o', '-d', target_directory, archive_path],
                 ['unar', '-f', '-o', target_directory, archive_path]]
     for command in commands:
         try:
