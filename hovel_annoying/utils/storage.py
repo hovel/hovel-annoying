@@ -1,14 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 import tempfile
+from urllib.parse import quote
 
 import boto3
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.utils.six import text_type
-from django.utils.six.moves.urllib.parse import quote
 from storages.backends.s3boto3 import S3Boto3Storage
 from storages.utils import safe_join
 
@@ -69,8 +65,6 @@ def get_file(field_file, tmp_file):
 
 
 def get_content_disposition(filename):
-    if isinstance(filename, text_type):
-        filename = filename.encode('utf8')
     quoted = quote(filename)
     cd = '''attachment; filename="{0}"; filename*=UTF-8''{0}'''.format(quoted)
     return cd

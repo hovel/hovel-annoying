@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import os
 import shutil
 import subprocess
 
 from django.utils.encoding import force_text
-from django.utils.six import text_type
 
 
 def check_extracted_archive(archive_path, target_directory):
@@ -56,7 +52,7 @@ def extract_archive(archive_path, target_directory):
 def decode_zip_path(path):
     """Decode name of file or directory extracted from zip archive"""
 
-    if isinstance(path, text_type):
+    if isinstance(path, str):
         return path
     try:
         return path.decode('utf8')
